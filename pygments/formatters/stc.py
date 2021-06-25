@@ -1,6 +1,7 @@
 from pygments.formatter import Formatter
 import pygments.token
 import pygments.style
+import pygments.styles.default
 import re
 
 
@@ -29,17 +30,16 @@ class StcFormatter(Formatter):
         except ImportError:
             raise ImportError("Creating an stc formatter requires wx to be installed")
 
-        assert isinstance(self.style, pygments.style.Style), f"Style object must be a pygments.style.Style"
+        assert isinstance(self.style, pygments.style.Style) or issubclass(self.style, pygments.style.Style), f"Style object must be a pygments.style.Style"
         assert isinstance(target, wx.stc.StyledTextCtrl), f"Target object must be a wx.stc.StyledTextCtrl"
-        assert target.GetLexer() in self.supported_lexers, f"Language '{target.GetLexerLanguage()}' not currently supported"
 
-        target.SetBackgroundColour(self.style.background_color)
+        target.SetBackgroundColour(self.hex2rgb(self.style.background_color))
         # Set selection colour
-        target.SetSelBackground(self.style.highlight_color)
+        target.SetSelBackground(True, self.hex2rgb(self.style.highlight_color))
         # Set margin
         target.StyleSetSpec(wx.stc.STC_STYLE_LINENUMBER, self.style.line_number_color)
-        target.SetFoldMarginColour(True, self.style.line_number_background_color)
-        target.SetFoldMarginHiColour(True, self.style.line_number_special_background_color)
+        target.SetFoldMarginColour(True, self.hex2rgb(self.style.line_number_background_color))
+        target.SetFoldMarginHiColour(True, self.hex2rgb(self.style.line_number_special_background_color))
 
         # Map pygments tokens to stc tokens
         token_map = {
@@ -189,3 +189,26 @@ class StcFormatter(Formatter):
             out.append("italic")
 
         return " ".join(out)
+
+    @staticmethod
+    def hex2rgb(val):
+        # If "inherit", return
+        if val in ["inherit", "transparent"]:
+            return (0, 0, 0)
+        # Check hex is valid
+        assert re.fullmatch(r"#[0-9abcdef]{0,6}", val), "Value '{}' is not a valid hex code".format(val)
+        # Remove hash
+        val = val.replace("#", "")
+        # Split hex into red, green and blue
+        if len(val) == 3:
+            r, g, b = val
+        elif len(val) == 6:
+            r, g, b = (val[:2], val[2:4], val[4:])
+        else:
+            ValueError("Value '{}' is not a valid hex code".format(val))
+        # Integerise
+        r = int(r, 16)
+        g = int(g, 16)
+        b = int(b, 16)
+
+        return (r, g, b)
