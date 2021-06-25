@@ -20,7 +20,7 @@ class StcFormatter(Formatter):
         120,  # JSON
     ]
 
-    def format(self, target):
+    def format(self, tokens, target):
         """
         Format ``target``, a `wx.stc.StyledTextCtrl` object.
         """
