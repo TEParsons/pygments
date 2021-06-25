@@ -171,9 +171,9 @@ class StcFormatter(Formatter):
         underline = re.match(r"underline", spec)
         nounderline = re.match(r"nounderline", spec)
         noinherit = re.match(r"noinherit", spec)
-        bg = re.match(r"(?<=bg:) ?[0-9abcdef]{0,3}", spec)
+        bg = re.match(r"(?<=bg:) ?[0-9abcdefABCDEF]{0,3}", spec)
         border = re.match(r"(?<=border:) ?#?[0-9abcdef]{0,6}", spec)
-        fg = re.match(r"(?<!:)#[0-9abcdef]{0,6}", spec)
+        fg = re.match(r"(?<!:)#[0-9abcdefABCDEF]{0,6}", spec)
         # Use extracted attributes to build stc spec
         out = []
         if fg:
@@ -196,16 +196,17 @@ class StcFormatter(Formatter):
         if val in ["inherit", "transparent"]:
             return (0, 0, 0)
         # Check hex is valid
-        assert re.fullmatch(r"#[0-9abcdef]{0,6}", val), "Value '{}' is not a valid hex code".format(val)
+        assert re.fullmatch(r"#[0-9abcdefABCDEF]{0,6}", val), "Value '{}' is not a valid hex code".format(val)
         # Remove hash
         val = val.replace("#", "")
-        # Split hex into red, green and blue
+        # Expand short style
         if len(val) == 3:
-            r, g, b = val
-        elif len(val) == 6:
+            val = val[0] + "0" + val[1] + "0" + val[2] + "0"
+        # Split hex into red, green and blue
+        if len(val) == 6:
             r, g, b = (val[:2], val[2:4], val[4:])
         else:
-            ValueError("Value '{}' is not a valid hex code".format(val))
+            raise ValueError("Value '#{}' is not a valid hex code".format(val))
         # Integerise
         r = int(r, 16)
         g = int(g, 16)
